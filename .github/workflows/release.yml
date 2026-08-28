@@ -1,0 +1,172 @@
+name: Release Hanadia Mono
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hanadia-mono-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Check the flake
+        run: nix flake check
+
+      - name: Build the fonts
+        run: nix build
+
+      - name: Collect release artifacts
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          commit_timestamp="$(git show -s --format=%cI "$GITHUB_SHA")"
+          commit_date="$(date -u --date="$commit_timestamp" +%Y.%m.%d)"
+          tag="v${commit_date}.${GITHUB_RUN_NUMBER}"
+          directory="HanadiaMono-${tag}"
+          build_path="$(readlink -f result)"
+
+          test -d "$build_path/share/fonts/truetype"
+          mkdir -p "$directory"
+          cp "$build_path"/share/fonts/truetype/*.ttf "$directory/"
+          cp LICENSE "$directory/LICENSE.txt"
+          cp LICENSES/Cascadia-Code-OFL.txt "$directory/Cascadia-Code-OFL.txt"
+          cp LICENSES/Pretendard-OFL.txt "$directory/Pretendard-OFL.txt"
+          cp README.md "$directory/README.txt"
+          cp "$build_path/share/doc/hanadia-mono/BUILD-INFO.txt" "$directory/BUILD-INFO.txt"
+          chmod u+w "$directory/BUILD-INFO.txt"
+
+          cat >> "$directory/BUILD-INFO.txt" <<EOF
+
+          Hanadia Mono version: ${tag}
+          Hanadia Mono git commit: ${GITHUB_SHA}
+          Release date basis: UTC commit date ${commit_date}
+          EOF
+
+          # Keep archive member timestamps independent of the runner clock.
+          find "$directory" -type f -exec touch -t 198001010000 {} +
+
+          zip_file="${directory}.zip"
+          tar_file="${directory}.tar.gz"
+          zip_path="$PWD/$zip_file"
+          (find "$directory" -type f -print | LC_ALL=C sort | zip -q -X "$zip_path" -@)
+          tar --sort=name --mtime='UTC 1970-01-01' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf "$tar_file" "$directory"
+
+          test -s "$zip_file"
+          test -s "$tar_file"
+          {
+            echo "tag=$tag"
+            echo "zip=$zip_file"
+            echo "tar=$tar_file"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create the immutable release tag
+        env:
+          TAG: ${{ steps.package.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          release_exists() {
+            local response status
+            if response="$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>&1)"; then
+              return 0
+            else
+              status=$?
+            fi
+            if printf '%s\n' "$response" | grep -Eq 'HTTP/[0-9.]+[[:space:]]+404|HTTP[[:space:]]+404'; then
+              return 1
+            fi
+            printf '%s\n' "$response" >&2
+            return "$status"
+          }
+
+          # A rerun must not alter an already published release.
+          if release_exists; then
+            echo "Release $TAG already exists; leaving its tag unchanged."
+            exit 0
+          else
+            release_status=$?
+            if [ "$release_status" -ne 1 ]; then
+              exit "$release_status"
+            fi
+          fi
+
+          remote_ref="$(git ls-remote --refs origin "refs/tags/$TAG" | awk 'NR == 1 { print $1 }')"
+          if [ -n "$remote_ref" ]; then
+            git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
+            existing_commit="$(git rev-list -n 1 "$TAG^{}")"
+            if [ "$existing_commit" != "$GITHUB_SHA" ]; then
+              echo "Tag $TAG already points to $existing_commit, not $GITHUB_SHA." >&2
+              exit 1
+            fi
+            echo "Tag $TAG already points to this commit; it will not be moved."
+          else
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+
+      - name: Create the GitHub Release
+        env:
+          TAG: ${{ steps.package.outputs.tag }}
+          ZIP_FILE: ${{ steps.package.outputs.zip }}
+          TAR_FILE: ${{ steps.package.outputs.tar }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          release_exists() {
+            local response status
+            if response="$(gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>&1)"; then
+              return 0
+            else
+              status=$?
+            fi
+            if printf '%s\n' "$response" | grep -Eq 'HTTP/[0-9.]+[[:space:]]+404|HTTP[[:space:]]+404'; then
+              return 1
+            fi
+            printf '%s\n' "$response" >&2
+            return "$status"
+          }
+
+          if release_exists; then
+            echo "Release $TAG already exists; no assets will be overwritten."
+            exit 0
+          else
+            release_status=$?
+            if [ "$release_status" -ne 1 ]; then
+              exit "$release_status"
+            fi
+          fi
+
+          gh release create "$TAG" \
+            "$ZIP_FILE" \
+            "$TAR_FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Hanadia Mono $TAG" \
+            --verify-tag \
+            --generate-notes
