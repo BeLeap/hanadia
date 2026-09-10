@@ -29,18 +29,9 @@ nix build .#example-image
 # result/example.png
 ```
 
-The following lines are an eight-column alignment test when the terminal uses
-the font's horizontal advances:
-
-```text
-12345678
-가나다라
-AB가CD나
-한글ABCD
-```
-
-Each ASCII character occupies one Cascadia Code cell. Each mapped Hangul
-character occupies two of those cells.
+The specimen also includes an eight-column alignment example using the font's
+horizontal advances. Each ASCII character occupies one Cascadia Code cell. Each
+mapped Hangul character occupies two of those cells.
 
 ## Building
 
