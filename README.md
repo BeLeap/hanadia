@@ -17,7 +17,7 @@ The generated static fonts are:
 
 The specimen below is rendered from the built `Hanadia Mono Regular` font:
 
-[![Hanadia Mono specimen](docs/hanadia-mono-specimen.png)](https://github.com/beleap/hanadia/releases/latest/download/HanadiaMono-example.png)
+![Hanadia Mono specimen](https://github.com/beleap/hanadia/releases/latest/download/HanadiaMono-example.png)
 
 Each release publishes the generated image as
 [`HanadiaMono-example.png`](https://github.com/beleap/hanadia/releases/latest/download/HanadiaMono-example.png).

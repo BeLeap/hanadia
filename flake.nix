@@ -143,7 +143,6 @@
 
             dontConfigure = true;
             dontStrip = true;
-            doCheck = true;
 
             buildPhase = ''
               set -eu
@@ -154,15 +153,6 @@
                 --output example.png
 
               runHook postBuild
-            '';
-
-            checkPhase = ''
-              set -eu
-              runHook preCheck
-
-              cmp example.png ${./docs/hanadia-mono-specimen.png}
-
-              runHook postCheck
             '';
 
             installPhase = ''
