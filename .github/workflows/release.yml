@@ -34,6 +34,9 @@ jobs:
       - name: Build the fonts
         run: nix build
 
+      - name: Build the example image
+        run: nix build .#example-image --out-link result-example-image
+
       - name: Collect release artifacts
         id: package
         shell: bash
@@ -45,15 +48,21 @@ jobs:
           tag="v${commit_date}.${GITHUB_RUN_NUMBER}"
           directory="HanadiaMono-${tag}"
           build_path="$(readlink -f result)"
+          example_image="HanadiaMono-example.png"
+          example_image_path="$(readlink -f result-example-image)/example.png"
 
           test -d "$build_path/share/fonts/truetype"
-          mkdir -p "$directory"
+          test -s "$example_image_path"
+          mkdir -p "$directory/docs"
           cp "$build_path"/share/fonts/truetype/*.ttf "$directory/"
           cp LICENSE "$directory/LICENSE.txt"
           cp LICENSES/Cascadia-Code-OFL.txt "$directory/Cascadia-Code-OFL.txt"
           cp LICENSES/Pretendard-OFL.txt "$directory/Pretendard-OFL.txt"
           cp README.md "$directory/README.txt"
           cp "$build_path/share/doc/hanadia-mono/BUILD-INFO.txt" "$directory/BUILD-INFO.txt"
+          cp "$example_image_path" "$directory/docs/hanadia-mono-specimen.png"
+          cp "$example_image_path" "$directory/$example_image"
+          cp "$example_image_path" "$example_image"
           chmod u+w "$directory/BUILD-INFO.txt"
 
           cat >> "$directory/BUILD-INFO.txt" <<EOF
@@ -80,6 +89,7 @@ jobs:
             echo "tag=$tag"
             echo "zip=$zip_file"
             echo "tar=$tar_file"
+            echo "example_image=$example_image"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create the immutable release tag
@@ -134,6 +144,7 @@ jobs:
           TAG: ${{ steps.package.outputs.tag }}
           ZIP_FILE: ${{ steps.package.outputs.zip }}
           TAR_FILE: ${{ steps.package.outputs.tar }}
+          EXAMPLE_IMAGE: ${{ steps.package.outputs.example_image }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
@@ -166,6 +177,7 @@ jobs:
           gh release create "$TAG" \
             "$ZIP_FILE" \
             "$TAR_FILE" \
+            "$EXAMPLE_IMAGE" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Hanadia Mono $TAG" \
             --verify-tag \

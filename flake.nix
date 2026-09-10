@@ -39,6 +39,9 @@
           python = pkgs.python3.withPackages (pythonPackages: [
             pythonPackages.fonttools
           ]);
+          imagePython = pkgs.python3.withPackages (pythonPackages: [
+            pythonPackages.pillow
+          ]);
           cascadiaArchive = pkgs.fetchurl {
             url = "https://github.com/microsoft/cascadia-code/releases/download/${cascadiaRevision}/CascadiaCode-2407.24.zip";
             hash = cascadiaArchiveHash;
@@ -70,9 +73,7 @@
                 --style "${weight}"
             '')
             weights);
-        in
-        {
-          default = pkgs.stdenvNoCC.mkDerivation {
+          fontPackage = pkgs.stdenvNoCC.mkDerivation {
             pname = "hanadia-mono";
             version = "0.1.0";
             src = ./.;
@@ -132,6 +133,52 @@
               runHook postInstall
             '';
           };
+
+          exampleImage = pkgs.stdenvNoCC.mkDerivation {
+            pname = "hanadia-mono-example-image";
+            version = "0.1.0";
+            src = ./.;
+
+            nativeBuildInputs = [ imagePython ];
+
+            dontConfigure = true;
+            dontStrip = true;
+            doCheck = true;
+
+            buildPhase = ''
+              set -eu
+              runHook preBuild
+
+              python scripts/render-example.py \
+                --font "${fontPackage}/share/fonts/truetype/HanadiaMono-Regular.ttf" \
+                --output example.png
+
+              runHook postBuild
+            '';
+
+            checkPhase = ''
+              set -eu
+              runHook preCheck
+
+              cmp example.png ${./docs/hanadia-mono-specimen.png}
+
+              runHook postCheck
+            '';
+
+            installPhase = ''
+              set -eu
+              runHook preInstall
+
+              install -d "$out"
+              install -m 0644 example.png "$out/example.png"
+
+              runHook postInstall
+            '';
+          };
+        in
+        {
+          default = fontPackage;
+          example-image = exampleImage;
         });
     in
     rec {
@@ -139,6 +186,7 @@
 
       checks = forAllSystems (system: {
         build = packages.${system}.default;
+        example-image = packages.${system}.example-image;
       });
     };
 }

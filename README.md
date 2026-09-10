@@ -15,24 +15,18 @@ The generated static fonts are:
 
 ## Screenshots / Examples
 
-No screenshots are committed yet. Use the following sample after installing the
-font:
+The specimen below is rendered from the built `Hanadia Mono Regular` font:
 
-```text
-abcdefghijklmnopqrstuvwxyz
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-0123456789
+[![Hanadia Mono specimen](docs/hanadia-mono-specimen.png)](https://github.com/beleap/hanadia/releases/latest/download/HanadiaMono-example.png)
 
-Hello, 세계!
-가나다라마바사아자차카타파하
-한글 English 1234
-ABC가나다DEF
-가A나B다C
+Each release publishes the generated image as
+[`HanadiaMono-example.png`](https://github.com/beleap/hanadia/releases/latest/download/HanadiaMono-example.png).
 
--> => != === !== >= <=
-ffi fi fl
+Regenerate it locally with:
 
-│ ─ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼
+```sh
+nix build .#example-image
+# result/example.png
 ```
 
 The following lines are an eight-column alignment test when the terminal uses
