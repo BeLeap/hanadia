@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge Hangul glyphs into a Cascadia Code TrueType font.
+"""Merge Hangul glyphs into a Cascadia Code NF TrueType font.
 
 The base font is intentionally kept intact except for:
 
@@ -11,7 +11,7 @@ The base font is intentionally kept intact except for:
 Imported glyphs retain their TrueType composite structure.  Their component
 names are rewritten into a private namespace, and source hinting programs are
 not copied because their CVT/program indexes belong to Pretendard rather than
-the Cascadia Code instruction environment.
+the Cascadia Code NF instruction environment.
 """
 
 from __future__ import annotations
@@ -155,7 +155,7 @@ def calculate_vertical_shift(
     upper_shift = allowed_maximum - maximum_y
     if lower_shift > upper_shift:
         raise ValueError(
-            "scaled Hangul outlines do not fit Cascadia Code's vertical line box: "
+            "scaled Hangul outlines do not fit Cascadia Code NF's vertical line box: "
             f"outline y={minimum_y}..{maximum_y}, "
             f"line box={allowed_minimum}..{allowed_maximum}"
         )
@@ -296,7 +296,7 @@ def merge(args: argparse.Namespace) -> None:
 
             # Pretendard's instruction stream refers to its own CVT and
             # fpgm/prep tables.  An empty program is safer than dangling
-            # instruction semantics in the Cascadia Code instruction set.
+            # instruction semantics in the Cascadia Code NF instruction set.
             glyph.program = Program()
             glyf.glyphs[new_name] = glyph
 
@@ -360,7 +360,7 @@ def merge(args: argparse.Namespace) -> None:
             if cmap_table.isUnicode():
                 cmap_table.cmap.update(additions)
 
-        # Keep Cascadia Code's global line metrics and layout tables.  Rebuild
+        # Keep Cascadia Code NF's global line metrics and layout tables.  Rebuild
         # only derived metrics/ranges that must account for the new glyphs.
         base["maxp"].recalc(base)
         base["hhea"].recalc(base)

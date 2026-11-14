@@ -25,6 +25,7 @@ RESERVED_NAMES = (
     "M PLUS 1",
 )
 REQUIRED_HANGUL = "가한글힣ㄱㅏ"
+REQUIRED_NERD_FONT_CODEPOINTS = (0xF1A02,)
 ALIGNMENT_CASES = {
     "12345678": 8,
     "가나다라": 8,
@@ -161,6 +162,11 @@ def verify(path: Path, expected_style: str) -> None:
                 codepoint in cmap,
                 f"required Hangul character is missing: U+{codepoint:04X}",
             )
+        for codepoint in REQUIRED_NERD_FONT_CODEPOINTS:
+            assert_true(
+                codepoint in cmap,
+                f"required Nerd Font glyph is missing: U+{codepoint:04X}",
+            )
 
         ascii_widths = {}
         for character in ("A", "M", "0", " "):
@@ -173,6 +179,13 @@ def verify(path: Path, expected_style: str) -> None:
         )
         cell_width = next(iter(ascii_widths.values()))
         assert_true(cell_width > 0, "ASCII cell width is not positive")
+        for codepoint in REQUIRED_NERD_FONT_CODEPOINTS:
+            width = font["hmtx"][cmap[codepoint]][0]
+            assert_true(
+                width == cell_width,
+                f"Nerd Font glyph U+{codepoint:04X} has width {width}, "
+                f"expected one cell ({cell_width})",
+            )
 
         for codepoint in range(0x20, 0x7F):
             assert_true(
@@ -273,7 +286,7 @@ def verify(path: Path, expected_style: str) -> None:
             record.FeatureTag
             for record in font["GSUB"].table.FeatureList.FeatureRecord
         }
-        assert_true("calt" in feature_tags, "Cascadia Code calt feature is missing")
+        assert_true("calt" in feature_tags, "Cascadia Code NF calt feature is missing")
         assert_true(
             has_contextual_substitution(font, "calt"),
             "calt has no contextual substitution used by programming ligatures",

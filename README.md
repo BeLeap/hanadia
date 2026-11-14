@@ -2,8 +2,8 @@
 
 ## About
 
-Hanadia Mono is a coding font combining the Latin, programming symbols, and
-OpenType features of Cascadia Code with Korean glyphs derived from Pretendard.
+Hanadia Mono combines the Latin, programming symbols, Nerd Font icons, and
+OpenType features of Cascadia Code NF with Korean glyphs derived from Pretendard.
 It is an independent derivative project for terminal and coding use.
 
 The generated static fonts are:
@@ -30,7 +30,7 @@ nix build .#example-image
 ```
 
 The specimen also includes an eight-column alignment example using the font's
-horizontal advances. Each ASCII character occupies one Cascadia Code cell. Each
+horizontal advances. Each ASCII character occupies one Cascadia Code NF cell. Each
 mapped Hangul character occupies two of those cells.
 
 ## Building
@@ -108,8 +108,9 @@ The flake pins and fetches these official release archives:
 | Cascadia Code | `v2407.24` | `56bcca3f2c1e4cb19458954f0e2bb4635960df91` | `sha256-5npo7jOG22P0i5BUvRlup1K8ak67TfNa3OZzPaUMhHQ=` |
 | Pretendard | `v1.3.9` | `5c41199ea0024a9e0b2cb31735265056e5472d76` | `sha256-BL41GnTWv31gxICjCH5R0YVIXTWlICMUKvHfGeuMQoo=` |
 
-The base file is the matching static `CascadiaCode-<weight>.ttf`. The source
-file is selected by the `pretendardWeightFor` mapping in `flake.nix` and
+The base file is the matching static `CascadiaCodeNF-<weight>.ttf`, which is
+the official upstream Nerd Font variant. The source file is selected by the
+`pretendardWeightFor` mapping in `flake.nix` and
 defaults to the matching `Pretendard-<weight>.ttf` from the release archive's
 `public/static/alternative/` directory. Change only the `Regular` mapping to
 `Medium` if a heavier Korean regular cut is desired. License files are also
@@ -119,7 +120,7 @@ during the build.
 `scripts/merge-font.py` performs the merge as follows:
 
 1. It reads both `head.unitsPerEm` values and scales Pretendard coordinates and
-   horizontal metrics by `CascadiaCode.unitsPerEm / Pretendard.unitsPerEm` with
+   horizontal metrics by `CascadiaCodeNF.unitsPerEm / Pretendard.unitsPerEm` with
    exact rational rounding.
 2. It selects Hangul Jamo, Compatibility Jamo, Extended-A, Hangul Syllables,
    and Extended-B cmap entries. Recursive composite dependencies are copied
@@ -127,7 +128,7 @@ during the build.
 3. It adds centered two-cell wrapper glyphs in a `hanadia.w#####` namespace.
    Their advance is exactly twice the measured `A`/`M`/`0`/space cell width, and
    their visual bounding box is centered in that width.
-4. Cascadia Code's glyphs, GSUB, GPOS, GDEF, and global vertical metrics remain
+4. Cascadia Code NF's glyphs, GSUB, GPOS, GDEF, and global vertical metrics remain
    the base. Only derived bounds, horizontal summary metrics, and Unicode
    ranges are recalculated. Source hinting programs are not copied because
    their CVT and instruction programs belong to Pretendard.
@@ -135,10 +136,11 @@ during the build.
    `HanadiaMono-<weight>` PostScript names. Upstream attribution and license
    information are retained in the `name` table.
 
-The build runs `scripts/verify-font.py` on every generated weight. It checks
+The build runs `scripts/verify-font.py` on every generated weight. The verifier
+requires `U+F1A02` and checks that its advance matches one ASCII cell. It checks
 that the TTF reopens, components are not dangling, ASCII is one cell, Hangul
 is two cells, vertical outlines fit the base line box, required names and
-license notices exist, and Cascadia Code's contextual `calt` feature remains.
+license notices exist, and Cascadia Code NF's contextual `calt` feature remains.
 
 ## License
 
@@ -216,9 +218,9 @@ The latest non-prerelease build is available from the GitHub Releases page.
 - The current build creates Light, Regular, SemiBold, and Bold upright static
   TTFs only. Italic and variable fonts are outside this scope.
 - Only the requested Hangul ranges are imported from Pretendard. Its Latin,
-  punctuation, and layout features are not used to replace Cascadia Code.
+  punctuation, and layout features are not used to replace Cascadia Code NF.
 - Imported Pretendard hinting programs are intentionally omitted; the base
-  Cascadia Code instruction tables are retained.
+  Cascadia Code NF instruction tables are retained.
 - A terminal that hard-codes Unicode East Asian Width instead of using font
   advances may not honor the two-cell behavior. The generated `hmtx` table
   still enforces the requested widths.

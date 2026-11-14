@@ -1,5 +1,5 @@
 {
-  description = "Hanadia Mono: Cascadia Code programming glyphs with Pretendard Hangul";
+  description = "Hanadia Mono: Cascadia Code NF glyphs with Pretendard Hangul";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
@@ -14,6 +14,7 @@
       forAllSystems = function: nixpkgs.lib.genAttrs systems function;
 
       cascadiaRevision = "v2407.24";
+      cascadiaFontVariant = "NF";
       cascadiaCommit = "56bcca3f2c1e4cb19458954f0e2bb4635960df91";
       cascadiaArchiveHash = "sha256-5npo7jOG22P0i5BUvRlup1K8ak67TfNa3OZzPaUMhHQ=";
       cascadiaLicenseHash = "sha256-UYgs0826ThbyIPRN2wimNcOMROpuCXXbJXT0vm+Vgjg=";
@@ -61,7 +62,7 @@
           weightCommands = builtins.concatStringsSep "\n" (map
             (weight: ''
               python scripts/merge-font.py \
-                --base "upstream/cascadia/ttf/static/CascadiaCode-${weight}.ttf" \
+                --base "upstream/cascadia/ttf/static/CascadiaCode${cascadiaFontVariant}-${weight}.ttf" \
                 --source "upstream/pretendard/public/static/alternative/Pretendard-${builtins.getAttr weight pretendardWeightFor}.ttf" \
                 --output "merged/HanadiaMono-${weight}.ttf" \
                 --weight "${weight}" \
@@ -96,7 +97,7 @@
               cmp ${pretendardLicense} LICENSES/Pretendard-OFL.txt
 
               mkdir -p upstream/cascadia upstream/pretendard merged
-              unzip -q ${cascadiaArchive} 'ttf/static/CascadiaCode-*.ttf' -d upstream/cascadia
+              unzip -q ${cascadiaArchive} 'ttf/static/CascadiaCode${cascadiaFontVariant}-*.ttf' -d upstream/cascadia
               unzip -q ${pretendardArchive} 'public/static/alternative/Pretendard-*.ttf' -d upstream/pretendard
 
               ${weightCommands}
@@ -104,6 +105,7 @@
               cat > BUILD-INFO.txt <<EOF
               Hanadia Mono source version: 0.1.0
               Cascadia Code revision: ${cascadiaRevision}
+              Cascadia Code variant: ${cascadiaFontVariant}
               Cascadia Code commit: ${cascadiaCommit}
               Cascadia Code archive hash: ${cascadiaArchiveHash}
               Pretendard revision: ${pretendardRevision}
